@@ -1,6 +1,6 @@
 package cn.edu.tsinghua.tsfile.io;
 
-import cn.edu.tsinghua.tsfile.common.utils.TSRandomAccessFileReader;
+import cn.edu.tsinghua.tsfile.common.utils.ITsRandomAccessFileReader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.Path;
@@ -12,22 +12,22 @@ import java.io.IOException;
  * interface {@link}TSRandomAccessFileReader.
  *
  */
-public class HDFSInputStream implements TSRandomAccessFileReader {
+public class HDFSReader implements ITsRandomAccessFileReader {
 
 	private final FSDataInputStream fsDataInputStream;
 	private final long length;
 
-	public HDFSInputStream(String filePath) throws IOException {
+	public HDFSReader(String filePath) throws IOException {
 
 		this(filePath, new Configuration());
 	}
 
-	public HDFSInputStream(String filePath, Configuration configuration) throws IOException {
+	public HDFSReader(String filePath, Configuration configuration) throws IOException {
 
 		this(new Path(filePath),configuration);
 	}
 
-	public HDFSInputStream(Path path, Configuration conf) throws IOException {
+	public HDFSReader(Path path, Configuration conf) throws IOException {
 		length = path.getFileSystem(conf).getFileStatus(path).getLen();
 		fsDataInputStream = path.getFileSystem(conf).open(path);
 	}

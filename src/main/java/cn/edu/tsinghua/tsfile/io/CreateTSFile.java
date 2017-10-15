@@ -1,17 +1,18 @@
 package cn.edu.tsinghua.tsfile.io;
 
-import cn.edu.tsinghua.tsfile.common.conf.TSFileConfig;
-import cn.edu.tsinghua.tsfile.common.conf.TSFileDescriptor;
-import cn.edu.tsinghua.tsfile.common.constant.JsonFormatConstant;
-import cn.edu.tsinghua.tsfile.common.utils.RandomAccessOutputStream;
-import cn.edu.tsinghua.tsfile.common.utils.TSRandomAccessFileWriter;
-import cn.edu.tsinghua.tsfile.file.metadata.enums.TSDataType;
-import cn.edu.tsinghua.tsfile.file.metadata.enums.TSEncoding;
-import cn.edu.tsinghua.tsfile.timeseries.basis.TsFile;
+import java.io.File;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
+import cn.edu.tsinghua.tsfile.common.conf.TSFileConfig;
+import cn.edu.tsinghua.tsfile.common.conf.TSFileDescriptor;
+import cn.edu.tsinghua.tsfile.common.constant.JsonFormatConstant;
+import cn.edu.tsinghua.tsfile.common.utils.ITsRandomAccessFileWriter;
+import cn.edu.tsinghua.tsfile.common.utils.TsRandomAccessFileWriter;
+import cn.edu.tsinghua.tsfile.file.metadata.enums.TSDataType;
+import cn.edu.tsinghua.tsfile.file.metadata.enums.TSEncoding;
+import cn.edu.tsinghua.tsfile.timeseries.basis.TsFile;
 
 /**
  * create a TSFile for test
@@ -25,8 +26,7 @@ public class CreateTSFile {
             file.delete();
 
         JSONObject jsonSchema = generateSchema1();
-        TSRandomAccessFileWriter output = new RandomAccessOutputStream(new File(tsfilePath));
-        TsFile tsFile = new TsFile(output, jsonSchema);
+        TsFile tsFile = new TsFile(new File(tsfilePath), jsonSchema);
 
         tsFile.writeLine("root.car.d1,1, s1, 1, s2, 10, s3, 100.1");
         tsFile.writeLine("root.car.d1,2, s1, 2, s2, 20, s3, 200.2, s4, 0.2, s5, PASS");
@@ -46,8 +46,7 @@ public class CreateTSFile {
             file.delete();
 
         JSONObject jsonSchema = generateSchema2();
-        TSRandomAccessFileWriter output = new RandomAccessOutputStream(new File(tsfilePath));
-        TsFile tsFile = new TsFile(output, jsonSchema);
+        TsFile tsFile = new TsFile(new File(tsfilePath), jsonSchema);
 
         tsFile.writeLine("root.car.d1,1, s1, 1");
         tsFile.writeLine("root.car.d1,2, s1, 2");

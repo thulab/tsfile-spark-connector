@@ -1,6 +1,6 @@
 package cn.edu.tsinghua.tsfile.io;
 
-import cn.edu.tsinghua.tsfile.common.utils.TSRandomAccessFileWriter;
+import cn.edu.tsinghua.tsfile.common.utils.ITsRandomAccessFileWriter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -15,22 +15,22 @@ import java.io.OutputStream;
  * interface {@link}TSRandomAccessFileWriter
  *
  */
-public class HDFSOutputStream implements TSRandomAccessFileWriter {
+public class HDFSWriter implements ITsRandomAccessFileWriter {
 
 	private FSDataOutputStream fsDataOutputStream;
 
-	public HDFSOutputStream(String filePath, boolean overwriter) throws IOException {
+	public HDFSWriter(String filePath, boolean overwriter) throws IOException {
 		
 		this(filePath, new Configuration(), overwriter);
 	}
 
 	
-	public HDFSOutputStream(String filePath, Configuration configuration, boolean overwriter) throws IOException {
+	public HDFSWriter(String filePath, Configuration configuration, boolean overwriter) throws IOException {
 		
 		this(new Path(filePath),configuration,overwriter);
 	}
 	
-	public HDFSOutputStream(Path path,Configuration configuration,boolean overwriter) throws IOException{
+	public HDFSWriter(Path path,Configuration configuration,boolean overwriter) throws IOException{
 		
 		FileSystem fsFileSystem = FileSystem.get(configuration);
 		fsDataOutputStream = fsFileSystem.create(path, overwriter);

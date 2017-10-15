@@ -16,7 +16,7 @@ public class TsFileRecordWriter extends RecordWriter<NullWritable, TSRecord> {
 	private TsFile tsFile = null;
 
 	public TsFileRecordWriter(TaskAttemptContext job, Path file, FileSchema fileSchema) throws IOException, WriteProcessException {
-		HDFSOutputStream hdfsOutputStream = new HDFSOutputStream(file.toString(), job.getConfiguration(), false);
+		HDFSWriter hdfsOutputStream = new HDFSWriter(file.toString(), job.getConfiguration(), false);
 		tsFile = new TsFile(hdfsOutputStream, fileSchema);
 	}
 
@@ -28,7 +28,7 @@ public class TsFileRecordWriter extends RecordWriter<NullWritable, TSRecord> {
 	@Override
 	public synchronized void write(NullWritable arg0, TSRecord tsRecord) throws IOException {
 		try {
-			tsFile.writeLine(tsRecord);
+			tsFile.writeRecord(tsRecord);
 		} catch (WriteProcessException e) {
 			e.printStackTrace();
 		}
