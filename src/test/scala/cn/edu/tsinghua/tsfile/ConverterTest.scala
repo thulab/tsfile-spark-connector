@@ -48,7 +48,7 @@ class ConverterTest extends FunSuite with BeforeAndAfterAll {
     filters += Or(LessThan("s1", 50), GreaterThan("s1", 80))
     val columns = new ArrayBuffer[String]()
     columns += SQLConstant.RESERVED_DELTA_OBJECT
-    val queryConfigs = Converter.toQueryConfigs(in, requiredSchema, filters, columns, "0".toLong, "749".toLong)
+    val queryConfigs = Converter.toQueryConfigs(in, requiredSchema, filters, columns, "0".toLong, "2468".toLong)
 
     val queryConfig0 = new QueryConfig("root.car.d2.s1", "0,(<80)&(>50)", "null", "2,root.car.d2.s1,<50")
     val queryConfig1 = new QueryConfig("root.car.d1.s1", "0,(<80)&(>50)", "null", "2,root.car.d1.s1,<50")
