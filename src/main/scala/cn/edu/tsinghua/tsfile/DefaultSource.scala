@@ -49,7 +49,7 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
     val conf = spark.sparkContext.hadoopConfiguration
 
     //check if the path is given
-    options.getOrElse(DefaultSource.path, throw new TSFileDataSourceException(s"${DefaultSource.path} must be specified for cn.edu.thu.tsfile DataSource"))
+    options.getOrElse(DefaultSource.path, throw new TSFileDataSourceException(s"${DefaultSource.path} must be specified for cn.edu.tsinghua.tsfile DataSource"))
 
     //get union series in TsFile
     val tsfileSchema = Converter.getUnionSeries(files, conf)
