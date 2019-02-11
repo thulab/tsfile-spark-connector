@@ -73,33 +73,33 @@ class ConverterTest extends FunSuite with BeforeAndAfterAll {
     Assert.assertEquals(queryConfig3.getTimeFilter, queryConfigs(3).getTimeFilter)
   }
 
-  test("testToSparkSqlSchema") {
-    val fields : util.ArrayList[SeriesSchema]= new util.ArrayList[SeriesSchema]()
-    fields.add(new SeriesSchema("s1", TSDataType.INT32, TSEncoding.PLAIN))
-    fields.add(new SeriesSchema("s2", TSDataType.INT64, TSEncoding.PLAIN))
-    fields.add(new SeriesSchema("s3", TSDataType.FLOAT, TSEncoding.PLAIN))
-    fields.add(new SeriesSchema("s4", TSDataType.DOUBLE, TSEncoding.PLAIN))
-    fields.add(new SeriesSchema("s5", TSDataType.BOOLEAN, TSEncoding.PLAIN))
-    fields.add(new SeriesSchema("s6", TSDataType.TEXT, TSEncoding.PLAIN))
-    val columns = new ArrayBuffer[String]()
-    columns += SQLConstant.RESERVED_DELTA_OBJECT
-    val sqlSchema = Converter.toSqlSchema(fields, columns)
-
-    val expectedFields = Array(
-      StructField(SQLConstant.RESERVED_TIME, LongType, nullable = false),
-      StructField(SQLConstant.RESERVED_DELTA_OBJECT, StringType, nullable = false),
-      StructField("s1", IntegerType, nullable = true),
-      StructField("s2", LongType, nullable = true),
-      StructField("s3", FloatType, nullable = true),
-      StructField("s4", DoubleType, nullable = true),
-      StructField("s5", BooleanType, nullable = true),
-      StructField("s6", StringType, nullable = true)
-    )
-    val expectedType = StructType(expectedFields)
-    val expectedSchema = StructType(expectedType.toList)
-
-    Assert.assertEquals(expectedSchema, sqlSchema.get)
-  }
+//  test("testToSparkSqlSchema") {
+//    val fields : util.ArrayList[SeriesSchema]= new util.ArrayList[SeriesSchema]()
+//    fields.add(new SeriesSchema("s1", TSDataType.INT32, TSEncoding.PLAIN))
+//    fields.add(new SeriesSchema("s2", TSDataType.INT64, TSEncoding.PLAIN))
+//    fields.add(new SeriesSchema("s3", TSDataType.FLOAT, TSEncoding.PLAIN))
+//    fields.add(new SeriesSchema("s4", TSDataType.DOUBLE, TSEncoding.PLAIN))
+//    fields.add(new SeriesSchema("s5", TSDataType.BOOLEAN, TSEncoding.PLAIN))
+//    fields.add(new SeriesSchema("s6", TSDataType.TEXT, TSEncoding.PLAIN))
+//    val columns = new ArrayBuffer[String]()
+//    columns += SQLConstant.RESERVED_DELTA_OBJECT
+//    val sqlSchema = Converter.toSqlSchema(fields, columns)
+//
+//    val expectedFields = Array(
+//      StructField(SQLConstant.RESERVED_TIME, LongType, nullable = false),
+//      StructField(SQLConstant.RESERVED_DELTA_OBJECT, StringType, nullable = false),
+//      StructField("s1", IntegerType, nullable = true),
+//      StructField("s2", LongType, nullable = true),
+//      StructField("s3", FloatType, nullable = true),
+//      StructField("s4", DoubleType, nullable = true),
+//      StructField("s5", BooleanType, nullable = true),
+//      StructField("s6", StringType, nullable = true)
+//    )
+//    val expectedType = StructType(expectedFields)
+//    val expectedSchema = StructType(expectedType.toList)
+//
+//    Assert.assertEquals(expectedSchema, sqlSchema.get)
+//  }
 
   test("testToSqlValue") {
     val boolField = new Field(TSDataType.BOOLEAN, "s1")

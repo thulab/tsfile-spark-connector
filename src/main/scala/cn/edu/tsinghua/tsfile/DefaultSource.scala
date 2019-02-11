@@ -52,22 +52,23 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
     options.getOrElse(DefaultSource.path, throw new TSFileDataSourceException(s"${DefaultSource.path} must be specified for cn.edu.tsinghua.tsfile DataSource"))
 
     //get union series in TsFile
-    val tsfileSchema = Converter.getUnionSeries(files, conf)
+    //val tsfileSchema =
+    Converter.toSqlSchema(files, conf)
 
-    DefaultSource.columnNames.clear()
+//    DefaultSource.columnNames.clear()
+//
+//    //unfold delta_object
+//    if (options.contains(SQLConstant.DELTA_OBJECT_NAME)) {
+//      val columns = options(SQLConstant.DELTA_OBJECT_NAME).split(SQLConstant.REGEX_PATH_SEPARATOR)
+//      columns.foreach( f => {
+//        DefaultSource.columnNames += f
+//      })
+//    } else {
+//      //using delta_object
+//      DefaultSource.columnNames += SQLConstant.RESERVED_DELTA_OBJECT
+//    }
 
-    //unfold delta_object
-    if (options.contains(SQLConstant.DELTA_OBJECT_NAME)) {
-      val columns = options(SQLConstant.DELTA_OBJECT_NAME).split(SQLConstant.REGEX_PATH_SEPARATOR)
-      columns.foreach( f => {
-        DefaultSource.columnNames += f
-      })
-    } else {
-      //using delta_object
-      DefaultSource.columnNames += SQLConstant.RESERVED_DELTA_OBJECT
-    }
-
-    Converter.toSqlSchema(tsfileSchema, DefaultSource.columnNames)
+    //Converter.toSqlSchema(tsfileSchema, DefaultSource.columnNames)
   }
 
   override def isSplitable(
@@ -148,7 +149,7 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
         // Used to convert `Row`s containing data columns into `InternalRow`s.
         private val encoderForDataColumns = RowEncoder(requiredSchema)
 
-        private var deltaObjectId = "null"
+//        private var deltaObjectId = "null"
 
         override def hasNext: Boolean = {
           var hasNext = false
@@ -161,10 +162,11 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
               priorityQueue.enqueue(Record(dataSets(tmpRecord.index).getNextRecord, tmpRecord.index))
             }
 
-            if (curRecord == null || tmpRecord.record.timestamp != curRecord.record.timestamp ||
-              !tmpRecord.record.getFields.get(0).deltaObjectId.equals(curRecord.record.getFields.get(0).deltaObjectId)) {
+            if (curRecord == null || tmpRecord.record.timestamp != curRecord.record.timestamp
+             // || !tmpRecord.record.getFields.get(0).deltaObjectId.equals(curRecord.record.getFields.get(0).deltaObjectId)
+            ) {
               curRecord = tmpRecord
-              deltaObjectId = curRecord.record.getFields.get(0).deltaObjectId
+//              deltaObjectId = curRecord.record.getFields.get(0).deltaObjectId
               hasNext = true
             }
           }
@@ -185,14 +187,15 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
           requiredSchema.foreach((field: StructField) => {
             if (field.name == SQLConstant.RESERVED_TIME) {
               rowBuffer(index) = curRecord.record.timestamp
-            } else if (field.name == SQLConstant.RESERVED_DELTA_OBJECT) {
-              rowBuffer(index) = deltaObjectId
-            } else if (DefaultSource.columnNames.contains(field.name)) {
-              val columnIndex = DefaultSource.columnNames.indexOf(field.name)
-              val columns = deltaObjectId.split(SQLConstant.REGEX_PATH_SEPARATOR)
-              rowBuffer(index) = columns(columnIndex)
+//            } else if (field.name == SQLConstant.RESERVED_DELTA_OBJECT) {
+//              rowBuffer(index) = deltaObjectId
+//            } else if (DefaultSource.columnNames.contains(field.name)) {
+//              val columnIndex = DefaultSource.columnNames.indexOf(field.name)
+//              val columns = deltaObjectId.split(SQLConstant.REGEX_PATH_SEPARATOR)
+//              rowBuffer(index) = columns(columnIndex)
             } else {
-              rowBuffer(index) = Converter.toSqlValue(fields.getOrElse(field.name, null))
+              rowBuffer(index) = Converter.toSqlValue(curRecord.record.fields(index-1))
+//              rowBuffer(index) = Converter.toSqlValue(fields.getOrElse(field.name, null))
             }
             index += 1
           })

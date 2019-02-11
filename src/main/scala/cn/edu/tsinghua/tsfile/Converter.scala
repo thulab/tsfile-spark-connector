@@ -45,23 +45,53 @@ object Converter {
     * @param conf hadoop configuration
     * @return union series
     */
-  def getUnionSeries(files: Seq[FileStatus], conf: Configuration): util.ArrayList[SeriesSchema] = {
+  def toSqlSchema(files: Seq[FileStatus], conf: Configuration): Option[StructType] = {
     val unionSeries = new util.ArrayList[SeriesSchema]()
     var seriesSet: mutable.Set[String] = mutable.Set()
+
+    val fields = new ListBuffer[StructField]()
+    fields += StructField(SQLConstant.RESERVED_TIME, LongType, nullable = false)
+
 
     files.foreach(f => {
       val in = new HDFSInputStream(f.getPath, conf)
       val queryEngine = new QueryEngine(in)
       val series = queryEngine.getAllSeriesSchema
-      series.foreach(s => {
-        if(!seriesSet.contains(s.name)) {
-          seriesSet += s.name
-          unionSeries.add(s)
-        }
+
+      val devices = queryEngine.getAllDeltaObject
+
+      devices.foreach(d => {
+
+        series.foreach(s => {
+
+          if(!seriesSet.contains(d+"."+ s.name)) {
+            seriesSet += d+"."+ s.name
+            //unionSeries.add(s)
+            fields += StructField(d+"."+s.name, s.dataType match {
+              case TSDataType.BOOLEAN => BooleanType
+              case TSDataType.INT32 => IntegerType
+              case TSDataType.INT64 => LongType
+              case TSDataType.FLOAT => FloatType
+              case TSDataType.DOUBLE => DoubleType
+              case TSDataType.ENUMS => StringType
+              case TSDataType.TEXT => StringType
+              case TSDataType.FIXED_LEN_BYTE_ARRAY => BinaryType
+              case other => throw new UnsupportedOperationException(s"Unsupported type $other")
+            }, nullable = true)
+
+          }
+        })
+
       })
+
     })
 
-    unionSeries
+    SchemaType(StructType(fields.toList), nullable = false).dataType match {
+      case t: StructType => Some(t)
+      case _ =>throw new RuntimeException("TSFile schema cannot be converted to a Spark SQL StructType:|")
+    }
+
+    //unionSeries
   }
 
   /**
@@ -71,36 +101,36 @@ object Converter {
     * @param columns e.g. {device:1, board:2} or {delta_object:0}
     * @return sparkSQL table schema
     */
-  def toSqlSchema(tsfileSchema: util.ArrayList[SeriesSchema], columns: ArrayBuffer[String]): Option[StructType] = {
-    val fields = new ListBuffer[StructField]()
-    fields += StructField(SQLConstant.RESERVED_TIME, LongType, nullable = false)
-
-    columns.filter(f => !f.equals("root"))foreach(f => {
-      fields += StructField(f, StringType, nullable = false)
-    })
-
-    tsfileSchema.foreach((series: SeriesSchema) => {
-      fields += StructField(series.name, series.dataType match {
-        case TSDataType.BOOLEAN => BooleanType
-        case TSDataType.INT32 => IntegerType
-        case TSDataType.INT64 => LongType
-        case TSDataType.FLOAT => FloatType
-        case TSDataType.DOUBLE => DoubleType
-        case TSDataType.ENUMS => StringType
-        case TSDataType.TEXT => StringType
-        case TSDataType.FIXED_LEN_BYTE_ARRAY => BinaryType
-        case other => throw new UnsupportedOperationException(s"Unsupported type $other")
-      }, nullable = true)
-    })
-
-    SchemaType(StructType(fields.toList), nullable = false).dataType match {
-      case t: StructType => Some(t)
-      case _ =>throw new RuntimeException(
-        s"""TSFile schema cannot be converted to a Spark SQL StructType:
-           |${tsfileSchema.toString}
-           |""".stripMargin)
-    }
-  }
+//  def toSqlSchema(tsfileSchema: util.ArrayList[SeriesSchema], columns: ArrayBuffer[String]): Option[StructType] = {
+//    val fields = new ListBuffer[StructField]()
+//    fields += StructField(SQLConstant.RESERVED_TIME, LongType, nullable = false)
+//
+//    columns.filter(f => !f.equals("root"))foreach(f => {
+//      fields += StructField(f, StringType, nullable = false)
+//    })
+//
+//    tsfileSchema.foreach((series: SeriesSchema) => {
+//      fields += StructField(series.name, series.dataType match {
+//        case TSDataType.BOOLEAN => BooleanType
+//        case TSDataType.INT32 => IntegerType
+//        case TSDataType.INT64 => LongType
+//        case TSDataType.FLOAT => FloatType
+//        case TSDataType.DOUBLE => DoubleType
+//        case TSDataType.ENUMS => StringType
+//        case TSDataType.TEXT => StringType
+//        case TSDataType.FIXED_LEN_BYTE_ARRAY => BinaryType
+//        case other => throw new UnsupportedOperationException(s"Unsupported type $other")
+//      }, nullable = true)
+//    })
+//
+//    SchemaType(StructType(fields.toList), nullable = false).dataType match {
+//      case t: StructType => Some(t)
+//      case _ =>throw new RuntimeException(
+//        s"""TSFile schema cannot be converted to a Spark SQL StructType:
+//           |${tsfileSchema.toString}
+//           |""".stripMargin)
+//    }
+//  }
 
 
   /**

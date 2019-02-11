@@ -92,14 +92,14 @@ public class QueryProcessor {
             if (!child.isSingle()) {
                 valueList.add(child);
             } else {
-                String singlePath = child.getSinglePath();
-                if (columnNames.contains(singlePath)) {
-                    if(!columnFilterOperators.contains(child))
-                        columnFilterOperators.add(child);
-                    else
-                        throw new QueryOperatorException(
-                                "The same key filter has been specified more than once: " + singlePath);
-                } else {
+//                String singlePath = child.getSinglePath();
+//                if (columnNames.contains(singlePath)) {
+//                    if(!columnFilterOperators.contains(child))
+//                        columnFilterOperators.add(child);
+//                    else
+//                        throw new QueryOperatorException(
+//                                "The same key filter has been specified more than once: " + singlePath);
+//                } else {
                     switch (child.getSinglePath()) {
                         case SQLConstant.RESERVED_TIME:
                             if (timeFilter != null) {
@@ -112,7 +112,7 @@ public class QueryProcessor {
                             valueList.add(child);
                             break;
                     }
-                }
+//                }
             }
         }
 
