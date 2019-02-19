@@ -92,8 +92,8 @@
 		</filter>
 	</appender>
 
-	<root level="INFO">
-		<appender-ref ref="FILEDEBUG" />
+	<root level="ERROR">
+		<!--<appender-ref ref="FILEDEBUG" />-->
 		<appender-ref ref="FILEINFO" />
 		<appender-ref ref="FILEWARN" />
 		<appender-ref ref="FILEERROR" />

@@ -55,18 +55,18 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
     //val tsfileSchema =
     Converter.toSqlSchema(files, conf)
 
-//    DefaultSource.columnNames.clear()
-//
-//    //unfold delta_object
-//    if (options.contains(SQLConstant.DELTA_OBJECT_NAME)) {
-//      val columns = options(SQLConstant.DELTA_OBJECT_NAME).split(SQLConstant.REGEX_PATH_SEPARATOR)
-//      columns.foreach( f => {
-//        DefaultSource.columnNames += f
-//      })
-//    } else {
-//      //using delta_object
-//      DefaultSource.columnNames += SQLConstant.RESERVED_DELTA_OBJECT
-//    }
+    //    DefaultSource.columnNames.clear()
+    //
+    //    //unfold delta_object
+    //    if (options.contains(SQLConstant.DELTA_OBJECT_NAME)) {
+    //      val columns = options(SQLConstant.DELTA_OBJECT_NAME).split(SQLConstant.REGEX_PATH_SEPARATOR)
+    //      columns.foreach( f => {
+    //        DefaultSource.columnNames += f
+    //      })
+    //    } else {
+    //      //using delta_object
+    //      DefaultSource.columnNames += SQLConstant.RESERVED_DELTA_OBJECT
+    //    }
 
     //Converter.toSqlSchema(tsfileSchema, DefaultSource.columnNames)
   }
@@ -113,33 +113,34 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
       //use QueryConfigs to query data in tsfile
       val dataSets = Executor.query(in, queryConfigs.toList, parameters)
 
-      case class Record(record: RowRecord, index: Int)
+      //      case class Record(record: RowRecord, index: Int)
 
-      implicit object RowRecordOrdering extends Ordering[Record] {
-        override def compare(r1: Record, r2: Record): Int = {
-          if (r1.record.timestamp == r2.record.timestamp) {
-            r1.record.getFields.get(0).deltaObjectId.compareTo(r2.record.getFields.get(0).deltaObjectId)
-          } else if (r1.record.timestamp < r2.record.timestamp) {
-            1
-          } else {
-            -1
-          }
-        }
-      }
+      //      implicit object RowRecordOrdering extends Ordering[Record] {
+      //        override def compare(r1: Record, r2: Record): Int = {
+      //          if (r1.record.timestamp == r2.record.timestamp) {
+      //            r1.record.getFields.get(0).deltaObjectId.compareTo(r2.record.getFields.get(0).deltaObjectId)
+      //          } else if (r1.record.timestamp < r2.record.timestamp) {
+      //            1
+      //          } else {
+      //            -1
+      //          }
+      //        }
+      //      }
 
-      val priorityQueue = new mutable.PriorityQueue[Record]()
+      //      val priorityQueue = new mutable.PriorityQueue[Record]()
 
       //init priorityQueue with first record of each dataSet
-      var queryDataSet: QueryDataSet = null
-      for (i <- 0 until dataSets.size()) {
-        queryDataSet = dataSets(i)
-        if (queryDataSet.hasNextRecord) {
-          val rowRecord = queryDataSet.getNextRecord
-          priorityQueue.enqueue(Record(rowRecord, i))
-        }
-      }
+      //      var queryDataSet: QueryDataSet = null
+      //      for (i <- 0 until dataSets.size()) {
+      //        queryDataSet = dataSets(i)
+      //        if (queryDataSet.hasNextRecord) {
+      //          val rowRecord = queryDataSet.getNextRecord
+      //          priorityQueue.enqueue(Record(rowRecord, i))
+      //        }
+      //      }
 
-      var curRecord: Record = null
+      var curRecord: RowRecord = null
+      var datasetIndex: Int = 0
 
       new Iterator[InternalRow] {
         private val rowBuffer = Array.fill[Any](requiredSchema.length)(null)
@@ -149,55 +150,34 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
         // Used to convert `Row`s containing data columns into `InternalRow`s.
         private val encoderForDataColumns = RowEncoder(requiredSchema)
 
-//        private var deltaObjectId = "null"
 
         override def hasNext: Boolean = {
-          var hasNext = false
 
-          while (priorityQueue.nonEmpty && !hasNext) {
-            //get a record from priorityQueue
-            val tmpRecord = priorityQueue.dequeue()
-            //insert a record to priorityQueue
-            if (dataSets(tmpRecord.index).hasNextRecord) {
-              priorityQueue.enqueue(Record(dataSets(tmpRecord.index).getNextRecord, tmpRecord.index))
-            }
 
-            if (curRecord == null || tmpRecord.record.timestamp != curRecord.record.timestamp
-             // || !tmpRecord.record.getFields.get(0).deltaObjectId.equals(curRecord.record.getFields.get(0).deltaObjectId)
-            ) {
-              curRecord = tmpRecord
-//              deltaObjectId = curRecord.record.getFields.get(0).deltaObjectId
-              hasNext = true
-            }
+          while (!dataSets(datasetIndex).hasNextRecord) {
+            if (datasetIndex <= dataSets.size()-2)
+              datasetIndex += 1
+            else if(datasetIndex == dataSets.size() -1)
+              return false
           }
 
-          hasNext
+          true
+
         }
 
         override def next(): InternalRow = {
 
-          val fields = new scala.collection.mutable.HashMap[String, Field]()
-          for (i <- 0 until curRecord.record.fields.size()) {
-            val field = curRecord.record.fields.get(i)
-            fields.put(field.measurementId, field)
-          }
+          curRecord = dataSets(datasetIndex).getNextRecord
 
           //index in one required row
-          var index = 0
+          var fieldIndex = 0
           requiredSchema.foreach((field: StructField) => {
             if (field.name == SQLConstant.RESERVED_TIME) {
-              rowBuffer(index) = curRecord.record.timestamp
-//            } else if (field.name == SQLConstant.RESERVED_DELTA_OBJECT) {
-//              rowBuffer(index) = deltaObjectId
-//            } else if (DefaultSource.columnNames.contains(field.name)) {
-//              val columnIndex = DefaultSource.columnNames.indexOf(field.name)
-//              val columns = deltaObjectId.split(SQLConstant.REGEX_PATH_SEPARATOR)
-//              rowBuffer(index) = columns(columnIndex)
+              rowBuffer(fieldIndex) = curRecord.timestamp
             } else {
-              rowBuffer(index) = Converter.toSqlValue(curRecord.record.fields(index-1))
-//              rowBuffer(index) = Converter.toSqlValue(fields.getOrElse(field.name, null))
+              rowBuffer(fieldIndex) = Converter.toSqlValue(curRecord.fields(fieldIndex - 1))
             }
-            index += 1
+            fieldIndex += 1
           })
 
           encoderForDataColumns.toRow(safeDataRow)
@@ -214,18 +194,19 @@ private[tsfile] class DefaultSource extends FileFormat with DataSourceRegister {
                             dataSchema: StructType): OutputWriterFactory = {
     DefaultSource.columnNames.clear()
 
-    //unfold delta_object
-    if (options.contains(SQLConstant.DELTA_OBJECT_NAME)) {
-      val columns = options(SQLConstant.DELTA_OBJECT_NAME).split(SQLConstant.REGEX_PATH_SEPARATOR)
-      columns.foreach( f => {
-        DefaultSource.columnNames += f
-      })
-    } else {
-      //using delta_object
-      DefaultSource.columnNames += SQLConstant.RESERVED_DELTA_OBJECT
-    }
-
-    new TsFileWriterFactory(options, DefaultSource.columnNames)
+    //    //unfold delta_object
+    //    if (options.contains(SQLConstant.DELTA_OBJECT_NAME)) {
+    //      val columns = options(SQLConstant.DELTA_OBJECT_NAME).split(SQLConstant.REGEX_PATH_SEPARATOR)
+    //      columns.foreach( f => {
+    //        DefaultSource.columnNames += f
+    //      })
+    //    } else {
+    //      //using delta_object
+    //      DefaultSource.columnNames += SQLConstant.RESERVED_DELTA_OBJECT
+    //    }
+    //
+    //    new TsFileWriterFactory(options, DefaultSource.columnNames)
+    null
   }
 
 }

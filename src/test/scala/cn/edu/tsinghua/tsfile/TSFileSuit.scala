@@ -8,6 +8,7 @@ import org.junit.Assert
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 import cn.edu.tsinghua.tsfile.io.CreateTSFile
 import cn.edu.tsinghua.tsfile.qp.common.SQLConstant
+import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable
 
@@ -144,8 +145,13 @@ class TSFileSuit extends FunSuite with BeforeAndAfterAll {
     val df = spark.read.tsfile(tsfile1)
     df.createOrReplaceTempView("tsfile_table")
     val newDf = spark.sql("select * from tsfile_table where time < 5")
-    print(newDf.schema)
-    newDf.show()
+//    println(newDf.schema)
+
+    newDf.collect()
+//    println(newDf.count())
+
+//    println(newDf.sample(1))
+
 //    val count = newDf.count()
 //    Assert.assertEquals(8, count)
   }
